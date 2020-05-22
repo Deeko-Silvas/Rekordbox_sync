@@ -2,6 +2,7 @@ import socket
 import os
 import subprocess
 from transfer import Transfer
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 
 
@@ -12,6 +13,7 @@ class Client:
         self.data = None
         self.s = None
         self.current_connection = None
+        self.audio_folder = ""
 
     def connect(self):
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -45,6 +47,7 @@ class Client:
         while True:
             packet = self.s.recv(1024)
             packet = packet.decode("utf-8")
+
             full_packet += packet
             if "!finished" in packet:
                 break
@@ -57,19 +60,39 @@ class Client:
         # files.send_missing_files(self.s)
 
     def send(self):
-
         self.s.send(str.encode("Send Data"))
 
     def audio(self):
-        files = Transfer("D:/Music/Unmixed Tunes")
-        self.s.send(str.encode("!list_server_audio_files"))
-        self.listen_list(files)
+        if len(self.audio_folder) != 0:
+            print("not 0")
+            files = Transfer(self.audio_folder)
+            self.s.send(str.encode("!list_server_audio_files"))
+            self.listen_list(files)
+        print("False")
+        return "False"
+
 
     def rekordbox_sync(self, drive):
         username = os.getlogin()
         files = Transfer(f"{drive[:3]}Users\\{username}\\AppData\\Roaming\\Pioneer\\rekordbox\\")
-        files.prepare_to_send_file(self.s, "master.db")
-        files.list_rb_track_info(self.s)
+        rb_files = ["master.db", "networkAnalyze6.db", "masterPlaylists6.xml", "automixPlaylist6.xml"]
+
+        #self.progress_bar()
+        for rb_file in rb_files:
+            files.prepare_to_send_file(self.s, files.path, rb_file)
+        for root, dir, file in os.walk(f"{files.path}\\share\\PIONEER"):
+            #print(len(file))
+            files.send_root(self.s, root)
+            for f in file:
+                files.prepare_to_send_file(self.s, root, f)
+        print("finished sending")
+
+    def progress_bar(self):
+        progress = QtWidgets.QProgressDialog()
+        progress.show()
+
+
+        #files.list_rb_track_info(self.s)
 
     def all(self, drive):
         self.audio()

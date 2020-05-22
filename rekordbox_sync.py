@@ -38,7 +38,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.rbBtn_2.clicked.connect(lambda: client_connection.rekordbox_sync(str(self.drivesComboBox_2.currentText())))
         self.allBtn_2.clicked.connect(lambda: client_connection.all(str(self.drivesComboBox_2.currentText())))
 
-        self.disconnectBtn_2.setDisabled(True)
+        self.musicFolderBtn_2.clicked.connect(self.add_folder)
+
+        # Set button statuses for program load (Disconnected state)
+        self.button_state(True)
 
     def show_send(self):
         self.send.show()
@@ -52,29 +55,48 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # Checks status of radio buttons and changes search options accordingly
         if self.networkRadio_2.isChecked() or self.previousRadio_2.isChecked():
             self.searchInput_2.setDisabled(True)
+            self.searchBtn_2.setDisabled(True)
+            if not self.previousRadio_2.isChecked():
+                self.searchBtn_2.setDisabled(False)
         else:
             pass
             self.searchInput_2.setDisabled(False)
+            self.searchBtn_2.setDisabled(False)
 
     def search(self):
-        if self.ipRadio_2.isChecked():
-            new_connection.ip = self.searchInput_2.text()
-        elif self.nameRadio_2.isChecked():
-            new_connection.search_name = self.searchInput_2.text()
-            self.find_network("name")
-        elif self.networkRadio_2:
+        if self.networkRadio_2.isChecked():
             self.find_network("scan")
+        elif self.previousRadio_2.isChecked():
+            pass
+        elif len(self.searchInput_2.text()) > 0:
+            if self.ipRadio_2.isChecked():
+                new_connection.ip = self.searchInput_2.text()
+                self.find_network("ip")
+            elif self.nameRadio_2.isChecked():
+                new_connection.search_name = self.searchInput_2.text()
+                self.find_network("name")
+        else:
+            # To add popup stating search cannot be empty
+            pass
 
     def find_network(self, radio):
         self.optionsCombo_2.clear()
         if radio == "ip":
-            new_connection.computer_name = socket.gethostbyaddr(new_connection.ip)[0]
+            try:
+                new_connection.computer_name = socket.gethostbyaddr(new_connection.ip)[0]
+            except socket.herror:
+                self.message_box("Error", "Error: IP address not found")
+                return
             self.optionsCombo_2.addItem(new_connection.computer_name)
         elif radio == "scan":
             scan = threading.Thread(target=self.scan_netwok, args=())
             scan.start()
         elif radio == "name":
-            new_connection.ip = socket.gethostname(new_connection.search_name)
+            try:
+                new_connection.ip = socket.gethostbyname(new_connection.search_name)
+            except socket.gaierror:
+                self.message_box("Error", "Error: Computer not found")
+                return
             new_connection.computer_name = new_connection.search_name
             self.optionsCombo_2.addItem(new_connection.computer_name)
 
@@ -106,16 +128,45 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         while not client_connection.current_connection:
             continue
         self.connectionLbl_2.setText(client_connection.current_connection)
-        self.disconnectBtn_2.setDisabled(False)
+        self.button_state(False)
 
     def disconnet_server(self):
         # Close socket, set connection text and disable button on GUI.
         client_connection.disconnect()
         self.connectionLbl_2.setText("No Connection")
-        self.disconnectBtn_2.setDisabled(True)
+        self.button_state(True)
+
+    def button_state(self, state):
+        self.disconnectBtn_2.setDisabled(state)
+        self.connectBtn_2.setDisabled((not state))
+        self.rbBtn_2.setDisabled(state)
+        self.audioBtn_2.setDisabled(state)
+        self.allBtn_2.setDisabled(state)
 
     def drives(self):
         return wrap(win32api.GetLogicalDriveStrings(), 4)
+
+    def add_folder(self):
+        client_connection.audio_folder = QtWidgets.QFileDialog.getExistingDirectory(self, "Select Directory")
+        self.folderInput_2.setText(client_connection.audio_folder)
+
+    def sync_audio(self):
+        #check_audio_file = client_connection.audio()
+        print("starting")
+        check_audio_file = client_connection.audio()
+        print("here")
+
+        print(check_audio_file)
+        #print(len(check_audio_file))
+        #if not check_audio_file:
+        #    self.message_box("Error", "Please select audio folder")
+        #return
+
+    def message_box(self, title, message):
+        self.app = QtWidgets.QMessageBox()
+        self.app.setWindowTitle(title)
+        self.app.setText(message)
+        self.app.exec()
 
 
 class Connection:

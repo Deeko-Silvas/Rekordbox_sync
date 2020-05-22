@@ -1,9 +1,12 @@
 import os
 import socket
+from datetime import datetime
+
 
 class Transfer:
     def __init__(self, path):
         self.path = path
+        self.audio_folder = ""
         self.files_list = []
         self.client_files_list = []
         self.server_files_list = []
@@ -20,18 +23,22 @@ class Transfer:
                 return self.files_list
 
     def list_server_files(self):
+        print(self.client_files_list)
         client_difference = set(self.client_files_list) - set(self.server_files_list)
         client_difference = list(client_difference)
         for diff in client_difference:
+            #print(diff)
             if "HArd Drive" not in diff:
                 print(diff)
 
+    """
     def list_rb_track_info(self, s):
         for root, dir, files in os.walk(f"{self.path}\\share\\PIONEER"):
             self.send_root(s, root)
             for file in files:
                 self.prepare_to_send_file(s, root, file)
         print("finished sending")
+    """
 
     def send_root(self, s, root):
         s.sendall(str.encode("!sending_root"))
@@ -56,12 +63,17 @@ class Transfer:
     def confirm_file_name_size(self, s, root, file, filename):
         """ get size of file to be sent, confirm this to the server and wait for confirmation back"""
         size = str(os.path.getsize(f"{root}\\{filename}"))
-        name_size = f"{root} + {filename} + {size}"
+        mod_time = os.path.getmtime(f"{root}\\{filename}")
+        mod_time = datetime.fromtimestamp(mod_time).strftime('%Y, %m, %d, %H, %M, %S')
+        name_size = f"{root} + {filename} + {size} + {mod_time}"
         s.send(str.encode(name_size, "utf-8"))
         while True:
             data = s.recv(1024)
-            if data.decode("utf-8") == "!size_confirmed":
+            data = data.decode("utf-8")
+            if data == "!size_confirmed":
                 break
+            elif data == "!file_exists":
+                return
         self.send_file(s, file)
 
     def send_file(self, s, file):
