@@ -1,8 +1,9 @@
 import socket
 import os
-import subprocess
 from transfer import Transfer
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtWidgets
+import threading
+
 
 
 
@@ -16,6 +17,7 @@ class Client:
         self.audio_folder = ""
 
     def connect(self):
+        # Create socket
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.settimeout(200)
         self.s.connect((self.host, self.port))
@@ -31,7 +33,7 @@ class Client:
             self.data = self.s.recv(1024)
             self.data = self.data.decode("utf-8")
 
-            # If reply from server is quite then shutdown, close socket and exit infinite loop
+            # If reply from server is quit then shutdown, close socket and exit infinite loop
             if self.data == "quit":
                 self.terminate_connection()
                 break
@@ -43,6 +45,9 @@ class Client:
         return
 
     def listen_list(self, files):
+        """ listens for a list of files from server until !finished message received.
+        passes the list to file.server_files_list to compare against client files before sending missing
+        files to server"""
         full_packet = ""
         while True:
             packet = self.s.recv(1024)
@@ -64,35 +69,28 @@ class Client:
 
     def audio(self):
         if len(self.audio_folder) != 0:
-            print("not 0")
             files = Transfer(self.audio_folder)
             self.s.send(str.encode("!list_server_audio_files"))
             self.listen_list(files)
-        print("False")
         return "False"
-
 
     def rekordbox_sync(self, drive):
         username = os.getlogin()
         files = Transfer(f"{drive[:3]}Users\\{username}\\AppData\\Roaming\\Pioneer\\rekordbox\\")
-        rb_files = ["master.db", "networkAnalyze6.db", "masterPlaylists6.xml", "automixPlaylist6.xml"]
+        #rb_files = ["automixPlaylist6.xml"]
+        rb_files = ["master.db", "master.backup.db", "networkAnalyze6.db", "masterPlaylists6.xml", "automixPlaylist6.xml"]
 
-        #self.progress_bar()
+        self.message_box("test", "test2", self.rekordbox_sync_db(drive))
+
         for rb_file in rb_files:
             files.prepare_to_send_file(self.s, files.path, rb_file)
-        for root, dir, file in os.walk(f"{files.path}\\share\\PIONEER"):
-            #print(len(file))
-            files.send_root(self.s, root)
-            for f in file:
-                files.prepare_to_send_file(self.s, root, f)
-        print("finished sending")
 
-    def progress_bar(self):
-        progress = QtWidgets.QProgressDialog()
-        progress.show()
+        for root, dir, file in os.walk(f"{files.path}share\\PIONEER"):
+            if files.send_root(self.s, root):
+                for f in file:
+                    files.prepare_to_send_file(self.s, root, f)
 
-
-        #files.list_rb_track_info(self.s)
+        self.message_box("Finished", "Finished sending database, artwork and waveform files")
 
     def all(self, drive):
         self.audio()
@@ -106,3 +104,9 @@ class Client:
     def terminate_connection(self):
         self.s.shutdown(socket.SHUT_RDWR)
         self.s.close()
+
+    def message_box(self, title, message):
+        self.app = QtWidgets.QMessageBox()
+        self.app.setWindowTitle(title)
+        self.app.setText(message)
+        self.app.exec()

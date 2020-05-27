@@ -45,8 +45,14 @@ class Transfer:
         data = s.recv(1024)
         data = data.decode("utf-8")
         if data == "!ready":
-            root = str.encode(root, encoding="utf-8")
-            s.sendall(root)
+            details = self.file_details(root)
+            details = str.encode(details, encoding="utf-8")
+            s.sendall(details)
+            while True:
+                data = s.recv(1024)
+                if data.decode("utf-8") == "!send":
+                    return True
+                return False
 
     def prepare_to_send_file(self, s, root, filename):
         """ open file to be sent and send message to server to be ready to accept file
@@ -75,6 +81,11 @@ class Transfer:
             elif data == "!file_exists":
                 return
         self.send_file(s, file)
+
+    def file_details(self, root, filename=""):
+        size = str(os.path.getsize(f"{root}{filename}"))
+        mod_time = datetime.fromtimestamp(os.path.getmtime(f"{root}{filename}")).strftime('%Y, %m, %d, %H, %M, %S')
+        return f"{root} + {filename} + {size} + {mod_time}"
 
     def send_file(self, s, file):
         """ when confirmation of size is received back send read file and send until all of file has been sent,

@@ -151,7 +151,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.folderInput_2.setText(client_connection.audio_folder)
 
     def sync_audio(self):
-        #check_audio_file = client_connection.audio()
         print("starting")
         check_audio_file = client_connection.audio()
         print("here")
