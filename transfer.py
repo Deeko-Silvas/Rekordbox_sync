@@ -1,5 +1,4 @@
 import os
-import socket
 from datetime import datetime
 
 
@@ -10,8 +9,10 @@ class Transfer:
         self.files_list = []
         self.client_files_list = []
         self.server_files_list = []
+        self.client_difference = []
 
     def list_audio_files(self, location, split, finish):
+        """create a list of audio files on server and client machine"""
         for root, dir, files, in os.walk(self.path):
             if len(files) > 0:
                 for file in files:
@@ -23,24 +24,12 @@ class Transfer:
                 return self.files_list
 
     def list_server_files(self):
-        print(self.client_files_list)
-        client_difference = set(self.client_files_list) - set(self.server_files_list)
-        client_difference = list(client_difference)
-        for diff in client_difference:
-            #print(diff)
-            if "HArd Drive" not in diff:
-                print(diff)
-
-    """
-    def list_rb_track_info(self, s):
-        for root, dir, files in os.walk(f"{self.path}\\share\\PIONEER"):
-            self.send_root(s, root)
-            for file in files:
-                self.prepare_to_send_file(s, root, file)
-        print("finished sending")
-    """
+        """list files that are on client but not server"""
+        self.client_difference = set(self.client_files_list) - set(self.server_files_list)
+        self.client_difference = list(self.client_difference)
 
     def send_root(self, s, root):
+        """send all folder names to server and return true if folder contents need to be sent"""
         s.sendall(str.encode("!sending_root"))
         data = s.recv(1024)
         data = data.decode("utf-8")
@@ -83,6 +72,7 @@ class Transfer:
         self.send_file(s, file)
 
     def file_details(self, root, filename=""):
+        """return a string containing root, filename, size and modified time and date separated by a +"""
         size = str(os.path.getsize(f"{root}{filename}"))
         mod_time = datetime.fromtimestamp(os.path.getmtime(f"{root}{filename}")).strftime('%Y, %m, %d, %H, %M, %S')
         return f"{root} + {filename} + {size} + {mod_time}"
@@ -90,6 +80,7 @@ class Transfer:
     def send_file(self, s, file):
         """ when confirmation of size is received back send read file and send until all of file has been sent,
         then close the file"""
+        print("sending file")
         l = file.read(1024)
         while l:
             s.sendall(l)
@@ -99,8 +90,6 @@ class Transfer:
             data = s.recv(1024)
             if data.decode("utf-8") == "!complete":
                 break
-
-
 
     def compare_audio_files(self, client, server):
         pass

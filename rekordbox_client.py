@@ -52,7 +52,6 @@ class Client:
         while True:
             packet = self.s.recv(1024)
             packet = packet.decode("utf-8")
-
             full_packet += packet
             if "!finished" in packet:
                 break
@@ -62,25 +61,36 @@ class Client:
         received_data.pop()
         files.server_files_list = received_data
         files.list_server_files()
-        # files.send_missing_files(self.s)
+        print(files.client_difference)
+        for track in files.client_difference:
+            # find last instanc of \ in track to split track and root
+            i = track.rfind("\\")
+            root = track[:i]
+            if "HArd Drive" not in root:
+                track = track[i+1:]
+                print(track)
+                files.send_root(self.s, root)
+                files.prepare_to_send_file(self.s, root, track)
+        self.message_box("Finished", "Finished sending Audio files")
+
 
     def send(self):
         self.s.send(str.encode("Send Data"))
 
     def audio(self):
+        print("audio")
         if len(self.audio_folder) != 0:
             files = Transfer(self.audio_folder)
             self.s.send(str.encode("!list_server_audio_files"))
             self.listen_list(files)
-        return "False"
+        else:
+            self.message_box("Error", "Please select audio folder")
 
     def rekordbox_sync(self, drive):
         username = os.getlogin()
         files = Transfer(f"{drive[:3]}Users\\{username}\\AppData\\Roaming\\Pioneer\\rekordbox\\")
         #rb_files = ["automixPlaylist6.xml"]
         rb_files = ["master.db", "master.backup.db", "networkAnalyze6.db", "masterPlaylists6.xml", "automixPlaylist6.xml"]
-
-        self.message_box("test", "test2", self.rekordbox_sync_db(drive))
 
         for rb_file in rb_files:
             files.prepare_to_send_file(self.s, files.path, rb_file)
@@ -93,11 +103,12 @@ class Client:
         self.message_box("Finished", "Finished sending database, artwork and waveform files")
 
     def all(self, drive):
+        """run audio and rekordbox sync functions when sync all button clicked"""
         self.audio()
         self.rekordbox_sync(drive)
 
     def disconnect(self):
-        # Send quit string to server and call listen method
+        """Send quit string to server and call listen method"""
         self.s.send(str.encode("quit"))
         self.listen()
 

@@ -18,6 +18,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.send_btn.clicked.connect(self.show_receive)
         self.receive_btn.clicked.connect(self.show_send)
 
+        #disable previous connection radio until implemented
+        self.previousRadio_2.setDisabled(True)
+
+        self.actionExit.triggered.connect(self.close)
+
         # Get list of drives on current machine
 
         self.drivesComboBox_2.addItems(self.drives())
@@ -166,6 +171,19 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.app.setWindowTitle(title)
         self.app.setText(message)
         self.app.exec()
+
+    def closeEvent(self, event):
+        """confirm exit when clicking file->exit or title bar cross"""
+        result = QtWidgets.QMessageBox.question(self,
+                                                "Confirm Exit...",
+                                                "Are you sure you want to exit ?",
+                                                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+        if result == QtWidgets.QMessageBox.Yes:
+            event.accept()
+            sys.exit()
+
+        else:
+            event.ignore()
 
 
 class Connection:

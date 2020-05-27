@@ -45,8 +45,8 @@ class Ui_MainWindow(object):
         self.gridLayout_9 = QtWidgets.QGridLayout(self.send)
         self.gridLayout_9.setObjectName("gridLayout_9")
         self.connectionGroupBox = QtWidgets.QGroupBox(self.send)
-        self.connectionGroupBox.setMinimumSize(QtCore.QSize(700, 0))
-        self.connectionGroupBox.setMaximumSize(QtCore.QSize(700, 16777215))
+        self.connectionGroupBox.setMinimumSize(QtCore.QSize(750, 0))
+        self.connectionGroupBox.setMaximumSize(QtCore.QSize(750, 16777215))
         self.connectionGroupBox.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.connectionGroupBox.setObjectName("connectionGroupBox")
         self.gridLayout_2 = QtWidgets.QGridLayout(self.connectionGroupBox)
@@ -248,7 +248,7 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuFile.menuAction())
 
         self.retranslateUi(MainWindow)
-        self.stackedWidget.setCurrentIndex(2)
+        self.stackedWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):

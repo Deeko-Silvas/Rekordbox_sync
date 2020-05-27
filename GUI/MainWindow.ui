@@ -121,7 +121,7 @@
          </size>
         </property>
         <property name="title">
-         <string>GroupBox</string>
+         <string>Connection</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
