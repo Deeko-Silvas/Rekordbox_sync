@@ -1,13 +1,14 @@
 from MainWindow import Ui_MainWindow
 from PyQt5 import QtCore, QtGui, QtWidgets
 import qdarkstyle
+from rekordbox_client import Client
+from rekordbox_server import Server
 import sys
 import win32api
 from textwrap import wrap
 import socket
-from rekordbox_server import Server
-from rekordbox_client import Client
 import threading
+import os
 
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
@@ -15,6 +16,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         super(MainWindow, self).__init__(*args, **kwargs)
         self.setupUi(self)
         self.app = None
+        self.await_connection_thread = None
+
+        self.client_connection = Client()
+        self.server_connection = Server()
 
         self.send_btn.clicked.connect(self.show_receive)
         self.receive_btn.clicked.connect(self.show_send)
@@ -39,10 +44,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.searchBtn_2.clicked.connect(self.search)
         self.connectBtn_2.clicked.connect(self.connect_server)
 
-        self.disconnectBtn_2.clicked.connect(self.disconnet_server)
-        self.audioBtn_2.clicked.connect(client_connection.audio)
-        self.rbBtn_2.clicked.connect(lambda: client_connection.rekordbox_sync(str(self.drivesComboBox_2.currentText())))
-        self.allBtn_2.clicked.connect(lambda: client_connection.all(str(self.drivesComboBox_2.currentText())))
+        self.disconnectBtn_2.clicked.connect(self.disconnect)
+        self.audioBtn_2.clicked.connect(self.client_connection.audio)
+        self.rbBtn_2.clicked.connect(lambda: self.client_connection.rekordbox_sync(str(self.drivesComboBox_2.currentText())))
+        self.allBtn_2.clicked.connect(lambda: self.client_connection.all(str(self.drivesComboBox_2.currentText())))
 
         self.musicFolderBtn_2.clicked.connect(self.add_folder)
 
@@ -50,8 +55,27 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.button_state(True)
 
     def show_send(self):
-        self.send.show()
         self.start.hide()
+        self.send.show()
+        QtWidgets.qApp.processEvents()
+        connect = threading.Thread(target=self.server_connection.connect, args=())
+        connect.start()
+        self.connectionLbl.setText("Waiting for connection")
+        QtWidgets.qApp.processEvents()
+        self.await_connection_thread = threading.Thread(target=self.await_connection, args=())
+        self.await_connection_thread.start()
+
+
+    def await_connection(self):
+        while not self.server_connection.connection_confirmed:
+            continue
+        self.connectionLbl.setText(f"Connection has  been established! | IP {self.server_connection.address[0]} | Port {str(self.server_connection.address[1])}")
+        self.await_termination()
+
+    def await_termination(self):
+        while self.server_connection.connection_confirmed:
+            continue
+        self.connectionLbl.setText(f"Awaiting connection")
 
     def show_receive(self):
         self.receive.show()
@@ -128,17 +152,18 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def connect_server(self):
         chosen_network = str(self.optionsCombo_2.currentText())
         new_connection.ip = socket.gethostbyname(chosen_network)
-        client_connection.host = new_connection.ip
-        connect_thread = threading.Thread(target=client_connection.connect, args=())
+        self.client_connection.host = new_connection.ip
+        connect_thread = threading.Thread(target=self.client_connection.connect, args=())
         connect_thread.start()
-        while not client_connection.current_connection:
+        while not self.client_connection.current_connection:
             continue
-        self.connectionLbl_2.setText(client_connection.current_connection)
+        self.connectionLbl_2.setText(self.client_connection.current_connection)
         self.button_state(False)
+        QtWidgets.qApp.processEvents()
 
-    def disconnet_server(self):
+    def disconnect(self):
         # Close socket, set connection text and disable button on GUI.
-        client_connection.disconnect()
+        self.client_connection.disconnect()
         self.connectionLbl_2.setText("No Connection")
         self.button_state(True)
 
@@ -153,19 +178,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         return wrap(win32api.GetLogicalDriveStrings(), 4)
 
     def add_folder(self):
-        client_connection.audio_folder = QtWidgets.QFileDialog.getExistingDirectory(self, "Select Directory")
-        self.folderInput_2.setText(client_connection.audio_folder)
+        self.client_connection.audio_folder = QtWidgets.QFileDialog.getExistingDirectory(self, "Select Directory")
+        self.folderInput_2.setText(self.client_connection.audio_folder)
 
     def sync_audio(self):
-        print("starting")
-        check_audio_file = client_connection.audio()
-        print("here")
-
-        print(check_audio_file)
-        # print(len(check_audio_file))
-        # if not check_audio_file:
-        # self.message_box("Error", "Please select audio folder")
-        # return
+        check_audio_file = self.client_connection.audio()
 
     def message_box(self, title, message):
         self.app = QtWidgets.QMessageBox()
@@ -181,8 +198,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                                                 QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
         if result == QtWidgets.QMessageBox.Yes:
             event.accept()
-            sys.exit()
-
+            os._exit(1)
         else:
             event.ignore()
 
@@ -197,8 +213,6 @@ class Connection:
 
 
 new_connection = Connection()
-
-client_connection = Client()
 
 app = QtWidgets.QApplication([])
 app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())

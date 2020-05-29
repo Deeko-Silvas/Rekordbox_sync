@@ -90,3 +90,16 @@ class Transfer:
             data = s.recv(1024)
             if data.decode("utf-8") == "!complete":
                 break
+
+class ServerTransfer:
+    def __init__(self, path):
+        self.path = path
+        self.files_list = []
+
+    def list_files(self):
+        for root, dirs, files in os.walk(self.path):
+            if len(files) > 0:
+                for file in files:
+                    self.files_list.append(f"{root}\\{file}!new_track")
+        self.files_list.append("!finished")
+        return self.files_list

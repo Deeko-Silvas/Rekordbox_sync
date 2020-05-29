@@ -2,6 +2,7 @@ import socket
 import os
 from transfer import Transfer
 from PyQt5 import QtWidgets
+from Qt_popups import Popups
 
 
 class Client:
@@ -59,17 +60,16 @@ class Client:
         received_data.pop()
         files.server_files_list = received_data
         files.list_server_files()
-        print(files.client_difference)
         for track in files.client_difference:
             # find last instanc of \ in track to split track and root
             i = track.rfind("\\")
             root = track[:i]
             if "HArd Drive" not in root:
                 track = track[i+1:]
-                print(track)
                 files.send_root(self.s, root)
                 files.prepare_to_send_file(self.s, root, track)
-        self.message_box("Finished", "Finished sending Audio files")
+        message_box = Popups("Finished", "Finished sending Audio files")
+        message_box.message_box()
 
     def send(self):
         self.s.send(str.encode("Send Data"))
@@ -81,7 +81,8 @@ class Client:
             self.s.send(str.encode("!list_server_audio_files"))
             self.listen_list(files)
         else:
-            self.message_box("Error", "Please select audio folder")
+            message_box = Popups("Error", "Please select audio folder")
+            message_box.message_box()
 
     def rekordbox_sync(self, drive):
         username = os.getlogin()
@@ -98,7 +99,8 @@ class Client:
                 for f in file:
                     files.prepare_to_send_file(self.s, root, f)
 
-        self.message_box("Finished", "Finished sending database, artwork and waveform files")
+        message_box = Popups("Finished", "Finished sending database, artwork and waveform files")
+        message_box.message_box()
 
     def all(self, drive):
         """run audio and rekordbox sync functions when sync all button clicked"""
@@ -113,9 +115,3 @@ class Client:
     def terminate_connection(self):
         self.s.shutdown(socket.SHUT_RDWR)
         self.s.close()
-
-    def message_box(self, title, message):
-        self.app = QtWidgets.QMessageBox()
-        self.app.setWindowTitle(title)
-        self.app.setText(message)
-        self.app.exec()
