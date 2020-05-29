@@ -13,7 +13,7 @@ class Transfer:
 
     def list_audio_files(self, location, split, finish):
         """create a list of audio files on server and client machine"""
-        for root, dir, files, in os.walk(self.path):
+        for root, d, files, in os.walk(self.path):
             if len(files) > 0:
                 for file in files:
                     self.files_list.append(f"{root}\\{file}{split}")
@@ -47,8 +47,8 @@ class Transfer:
         """ open file to be sent and send message to server to be ready to accept file
         wait for confirmation that the server is ready"""
         file = open(f"{root}\\{filename}", "rb")
-        l = str.encode("!sending_file", encoding="utf-8")
-        s.sendall(l)
+        sending = str.encode("!sending_file", encoding="utf-8")
+        s.sendall(sending)
         while True:
             data = s.recv(1024)
             if data.decode("utf-8") == "!ready":
@@ -81,15 +81,12 @@ class Transfer:
         """ when confirmation of size is received back send read file and send until all of file has been sent,
         then close the file"""
         print("sending file")
-        l = file.read(1024)
-        while l:
-            s.sendall(l)
-            l = file.read(1024)
+        file_data = file.read(1024)
+        while file_data:
+            s.sendall(file_data)
+            file_data = file.read(1024)
         file.close()
         while True:
             data = s.recv(1024)
             if data.decode("utf-8") == "!complete":
                 break
-
-    def compare_audio_files(self, client, server):
-        pass

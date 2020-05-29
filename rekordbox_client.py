@@ -2,9 +2,6 @@ import socket
 import os
 from transfer import Transfer
 from PyQt5 import QtWidgets
-import threading
-
-
 
 
 class Client:
@@ -15,6 +12,7 @@ class Client:
         self.s = None
         self.current_connection = None
         self.audio_folder = ""
+        self.app = None
 
     def connect(self):
         # Create socket
@@ -73,7 +71,6 @@ class Client:
                 files.prepare_to_send_file(self.s, root, track)
         self.message_box("Finished", "Finished sending Audio files")
 
-
     def send(self):
         self.s.send(str.encode("Send Data"))
 
@@ -89,13 +86,14 @@ class Client:
     def rekordbox_sync(self, drive):
         username = os.getlogin()
         files = Transfer(f"{drive[:3]}Users\\{username}\\AppData\\Roaming\\Pioneer\\rekordbox\\")
-        #rb_files = ["automixPlaylist6.xml"]
-        rb_files = ["master.db", "master.backup.db", "networkAnalyze6.db", "masterPlaylists6.xml", "automixPlaylist6.xml"]
+        # rb_files = ["automixPlaylist6.xml"]
+        rb_files = ["master.db", "master.backup.db", "networkAnalyze6.db", "masterPlaylists6.xml",
+                    "automixPlaylist6.xml"]
 
         for rb_file in rb_files:
             files.prepare_to_send_file(self.s, files.path, rb_file)
 
-        for root, dir, file in os.walk(f"{files.path}share\\PIONEER"):
+        for root, d, file in os.walk(f"{files.path}share\\PIONEER"):
             if files.send_root(self.s, root):
                 for f in file:
                     files.prepare_to_send_file(self.s, root, f)

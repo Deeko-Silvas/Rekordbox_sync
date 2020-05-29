@@ -14,11 +14,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self, *args, obj=None, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
         self.setupUi(self)
+        self.app = None
 
         self.send_btn.clicked.connect(self.show_receive)
         self.receive_btn.clicked.connect(self.show_send)
 
-        #disable previous connection radio until implemented
+        # disable previous connection radio until implemented
         self.previousRadio_2.setDisabled(True)
 
         self.actionExit.triggered.connect(self.close)
@@ -161,10 +162,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         print("here")
 
         print(check_audio_file)
-        #print(len(check_audio_file))
-        #if not check_audio_file:
-        #    self.message_box("Error", "Please select audio folder")
-        #return
+        # print(len(check_audio_file))
+        # if not check_audio_file:
+        # self.message_box("Error", "Please select audio folder")
+        # return
 
     def message_box(self, title, message):
         self.app = QtWidgets.QMessageBox()
@@ -196,6 +197,7 @@ class Connection:
 
 
 new_connection = Connection()
+
 client_connection = Client()
 
 app = QtWidgets.QApplication([])
