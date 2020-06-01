@@ -68,7 +68,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def await_connection(self):
         while not self.server_connection.connection_confirmed:
             continue
-        self.connectionLbl.setText(f"Connection has  been established! | IP {self.server_connection.address[0]} | Port {str(self.server_connection.address[1])}")
+        self.connectionLbl.setText(f"Connection has  been established! | IP {self.server_connection.address[0]} | "
+                                   f"Port {str(self.server_connection.address[1])}")
         self.await_termination()
 
     def await_termination(self):

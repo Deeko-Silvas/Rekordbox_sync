@@ -32,7 +32,7 @@ class Client:
             self.data = self.data.decode("utf-8")
 
             # If reply from server is quit then shutdown, close socket and exit infinite loop
-            if self.data == "!confirm_quit":
+            if self.data == "!confirm-quit":
                 self.terminate_connection()
                 break
 
