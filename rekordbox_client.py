@@ -1,7 +1,6 @@
 import socket
 import os
 from transfer import Transfer
-from PyQt5 import QtWidgets
 from Qt_popups import Popups
 
 
@@ -33,7 +32,7 @@ class Client:
             self.data = self.data.decode("utf-8")
 
             # If reply from server is quit then shutdown, close socket and exit infinite loop
-            if self.data == "quit":
+            if self.data == "!confirm_quit":
                 self.terminate_connection()
                 break
 
@@ -109,7 +108,7 @@ class Client:
 
     def disconnect(self):
         """Send quit string to server and call listen method"""
-        self.s.send(str.encode("quit"))
+        self.s.send(str.encode("!quit"))
         self.listen()
 
     def terminate_connection(self):

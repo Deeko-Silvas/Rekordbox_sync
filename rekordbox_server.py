@@ -8,6 +8,7 @@ host = ""
 port = 9999
 s = None
 
+
 class Server:
     def __init__(self):
         self.host = ""
@@ -26,7 +27,6 @@ class Server:
 
     def bind_socket(self):
         try:
-            print("Binding the Port: " + str(self.port))
             self.s.bind((self.host, self.port))
             self.s.listen(5)
         except socket.error as msg:
@@ -36,7 +36,6 @@ class Server:
     def socket_accept(self):
         self.conn, self.address = self.s.accept()
         self.connection_confirmed = True
-        print("Connection has  been established! | IP " + self.address[0] + " | Port " + str(self.address[1]))
         self.confirm_connection()
         self.receive_commands()
         self.connection_confirmed = False
@@ -44,29 +43,30 @@ class Server:
 
     def confirm_connection(self):
         self.host = socket.gethostname()
-        self.conn.send(str.encode(f"Connection established! | Name {self.host} | IP {socket.gethostbyname(self.host)}", encoding="utf-8"))
+        self.conn.send(str.encode(f"Connection established! | Name {self.host} | IP {socket.gethostbyname(self.host)}",
+                                  encoding="utf-8"))
 
     def receive_commands(self):
         while True:
             data = self.conn.recv(1024)
             data = data.decode("utf-8")
-            if data == "quit":
-                self.conn.send(str.encode("quit", encoding="utf-8"))
-                print(self.conn)
+            if data == "!quit":
+                self.conn.send(str.encode("!confirm-quit", encoding="utf-8"))
                 self.connection_confirmed = False
                 self.connect()
                 break
+            # Create ServerTransfer object
+            transfer = ServerTransfer("D:/Music/Unmixed Tunes")
             if data == "!list_server_audio_files":
-                files = ServerTransfer("D:/Music/Unmixed Tunes")
-                file_list = files.list_files()
+                file_list = transfer.list_files()
                 for file in file_list:
                     self.conn.send(str.encode(file, encoding="utf-8 "))
             if data == "!sending_file":
                 self.conn.send(str.encode("!ready", encoding="utf-8"))
-                receive_file()
+                self.receive_file()
             if data == "!sending_root":
                 self.conn.send(str.encode("!ready", encoding="utf-8"))
-                create_folders()
+                self.create_folders()
 
     def create_folders(self):
         details = self.conn.recv(2048)
@@ -81,7 +81,8 @@ class Server:
                 return
         self.conn.sendall(str.encode("!send", encoding="utf-8"))
 
-    def check_date(self, details):
+    @staticmethod
+    def check_date(details):
         file = f"{details[0]}{details[1]}"
         date_server = datetime.fromtimestamp(os.path.getmtime(file)).strftime('%Y, %m, %d, %H, %M, %S')
         if date_server >= details[3]:
@@ -115,5 +116,3 @@ class Server:
         self.create_socket()
         self.bind_socket()
         self.socket_accept()
-
-

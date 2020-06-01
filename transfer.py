@@ -91,6 +91,7 @@ class Transfer:
             if data.decode("utf-8") == "!complete":
                 break
 
+
 class ServerTransfer:
     def __init__(self, path):
         self.path = path

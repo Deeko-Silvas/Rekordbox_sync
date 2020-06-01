@@ -21,8 +21,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.client_connection = Client()
         self.server_connection = Server()
 
-        self.send_btn.clicked.connect(self.show_receive)
-        self.receive_btn.clicked.connect(self.show_send)
+        self.send_btn.clicked.connect(self.show_send)
+        self.receive_btn.clicked.connect(self.show_receive)
 
         # disable previous connection radio until implemented
         self.previousRadio_2.setDisabled(True)
@@ -54,17 +54,16 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # Set button statuses for program load (Disconnected state)
         self.button_state(True)
 
-    def show_send(self):
+    def show_receive(self):
         self.start.hide()
         self.send.show()
         QtWidgets.qApp.processEvents()
-        connect = threading.Thread(target=self.server_connection.connect, args=())
-        connect.start()
+        server_connect_thread = threading.Thread(target=self.server_connection.connect, args=())
+        server_connect_thread.start()
         self.connectionLbl.setText("Waiting for connection")
         QtWidgets.qApp.processEvents()
         self.await_connection_thread = threading.Thread(target=self.await_connection, args=())
         self.await_connection_thread.start()
-
 
     def await_connection(self):
         while not self.server_connection.connection_confirmed:
@@ -77,7 +76,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             continue
         self.connectionLbl.setText(f"Awaiting connection")
 
-    def show_receive(self):
+    def show_send(self):
         self.receive.show()
         self.start.hide()
 
